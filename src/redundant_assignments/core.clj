@@ -88,6 +88,17 @@
 
 (println "counts" counts)
 
+(defn cross-prod-janino-instance [ns]
+  (let [cn "CrossProdSumJanino"
+        sc (SimpleCompiler.)]
+    (.cook sc (->> ns
+                   (gen-prod-prod-class cn)
+                   main-to-indented))
+    (let [cl (.loadClass (.getClassLoader sc) cn)]
+      (.newInstance cl))))
+
+(def janino-cross-prod-class (cross-prod-janino-instance counts))
+
 ;; SimpleCompiler sc = new SimpleCompiler();
 ;;     sc.cook("public class Arne{ public float doWork(){return 42.0f;}}");
 ;;     Class<?> arneClass = sc.getClassLoader().loadClass("Arne");
@@ -119,9 +130,12 @@
         r  (time (f n X Y))]
     (println "   Result=" r)))
 
-(def javac-cross-prod (let [instance (CrossProdSum.)]
-                        (fn  [n X Y]
-                          (.eval instance n X Y))))
+(defn evaluator-for-instance [instance]
+  (fn  [n X Y]
+    (.eval instance n X Y)))
+
+(def javac-cross-prod (evaluator-for-instance (CrossProdSum.)))
+(def janino-cross-prod (evaluator-for-instance janino-cross-prod-class))
 
 (defn perform-redundant-test [f]
   (doseq [i counts]
@@ -130,7 +144,10 @@
 (comment
 
   ;; Perform the experiment for the JDK javac compiled class
+  (println "------ USING JAVAC")
   (perform-redundant-test javac-cross-prod)
+  (println "------ USING JANINO")
+  (perform-redundant-test janino-cross-prod)
 
   
   )
