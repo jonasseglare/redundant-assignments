@@ -1,10 +1,6 @@
 # redundant-assignments
 
-A Clojure library designed to ... well, that part is up to you.
-
-## Usage
-
-FIXME
+https://stackoverflow.com/questions/49361383/is-leaving-redundant-variables-etc-for-readability-in-java-performance-impacting
 
 ## License
 
