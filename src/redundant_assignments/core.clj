@@ -1,5 +1,6 @@
 (ns redundant-assignments.core
-  (:import [CrossProdSum]))
+  (:import [CrossProdSum]
+           [org.codehaus.janino SimpleCompiler]))
 
 (def var-counter (atom 0))
 
@@ -49,10 +50,10 @@
     "return sum;"]
    "}"])
 
-(defn gen-prod-prod-class [ns]
-  ["public class CrossProdSum {"
+(defn gen-prod-prod-class [class-name ns]
+  ["public class " class-name " {"
    (map cross-product-elem-sum  ns)
-   ["public static double eval(int n, double[] X, double[] Y) {"
+   ["public double eval(int n, double[] X, double[] Y) {"
     ["switch (n) {"
      (map (fn [i] (str  "case " i ": return eval" i "(X, Y);")) ns)
      "}"
@@ -74,18 +75,22 @@
 
 (defn output-class [ns]
   (->> ns
-       gen-prod-prod-class
+       (gen-prod-prod-class "CrossProdSum")
        main-to-indented
        (spit "src/java/CrossProdSum.java")))
 
 (def counts (->  (conj (set (map (fn [x]
                                    (Math/round x))
-                                 (take 22 (iterate (partial * 1.3) 1.0))))
+                                 (take 18 (iterate (partial * 1.4) 1.0))))
                        0)
                  sort))
 
 
 (println "counts" counts)
+
+;; SimpleCompiler sc = new SimpleCompiler();
+;;     sc.cook("public class Arne{ public float doWork(){return 42.0f;}}");
+;;     Class<?> arneClass = sc.getClassLoader().loadClass("Arne");
 
 (comment
 
@@ -94,15 +99,38 @@
 
 
 (def l 10000)
-(def X (double-array (take l (repeatedly rand))))
-(def Y (double-array (take l (repeatedly rand))))
 
-(defn exercise [n]
-  (dotimes [i 100]
-    (CrossProdSum/eval n X Y))
-  (println "For n=" n)
-  (let [r  (time (CrossProdSum/eval n X Y))]
+(defn gen-array []
+  (double-array (take l (repeatedly rand))))
+
+(defn gen-pair []
+  (vec (take 2 (repeatedly gen-array))))
+
+(def test-data (vec (take 100 (repeatedly gen-pair))))
+
+(defn exercise [f n]
+
+  ;;; Warm up
+  (doseq [[X Y] (butlast test-data)]
+    (f n X Y))
+
+  (println "n =" n)
+  (let [[X Y] (last test-data)
+        r  (time (f n X Y))]
     (println "   Result=" r)))
 
-(doseq [i counts]
-  (exercise i))
+(def javac-cross-prod (let [instance (CrossProdSum.)]
+                        (fn  [n X Y]
+                          (.eval instance n X Y))))
+
+(defn perform-redundant-test [f]
+  (doseq [i counts]
+    (exercise f i)))
+
+(comment
+
+  ;; Perform the experiment for the JDK javac compiled class
+  (perform-redundant-test javac-cross-prod)
+
+  
+  )
