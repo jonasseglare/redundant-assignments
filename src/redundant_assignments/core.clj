@@ -143,11 +143,12 @@
 
 (comment
 
-  ;; Perform the experiment for the JDK javac compiled class
-  (println "------ USING JAVAC")
-  (perform-redundant-test javac-cross-prod)
-  (println "------ USING JANINO")
-  (perform-redundant-test janino-cross-prod)
+  (do
+    ;; Perform the experiment for the JDK javac compiled class
+    (println "------ USING JAVAC")
+    (perform-redundant-test javac-cross-prod)
+    (println "------ USING JANINO")
+    (perform-redundant-test janino-cross-prod))
 
   
   )
